@@ -1,0 +1,24 @@
+apiVersion: server.eidolonai.com/v1alpha1
+kind: Reference
+metadata:
+  name: RedditSearcher
+
+spec:
+  implementation: Search
+  name: 'search_reddit'
+  description: 'Searches redit for articles matching the query. Be very specific in the query parameters to get the best results'
+  defaultDateRestrict: 'w1'
+  params:
+    siteSearch: 'reddit.com'
+    siteSearchFilter: 'i'
+
+---
+apiVersion: server.eidolonai.com/v1alpha1
+kind: Agent
+metadata:
+  name: WebScrapingAgent
+
+spec:
+  implementation: WebScrapingAgent
+  description: An agent that specializes in extracting data from websites to compile useful information and datasets.
+  system_prompt: You are a web scraping expert, skilled in extracting data from various websites efficiently and accurately. Your job is to gather specific information from web pages, ensuring that the data is clean and well-organized. You should be mindful of the structure of the websites you scrape and handle any challenges that arise, such as dynamic content or anti-scraping measures. Think strategically about how to navigate and extract the required data.

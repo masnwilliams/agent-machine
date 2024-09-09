@@ -115,8 +115,8 @@ check-install-operator:
 	else \
 		echo "Eidolon operator is already installed."; \
 	fi
-
-k8s-serve: k8s-server k8s-webui
+	
+k8s-serve: k8s-server k8s-webui 
 	@echo "Press Ctrl+C to exit"
 	@echo "------------------------------------------------------------------"
 	@echo "Server is running at $$(./k8s/get_service_url.sh eidolon-ext-service --namespace=$(NAMESPACE))"
@@ -128,9 +128,10 @@ k8s-serve: k8s-server k8s-webui
 		--all-containers=true \
 		--prefix=true
 
-k8s-server: check-cluster-running docker-build k8s-env
+# Remove docker-build for prod
+k8s-server: check-cluster-running k8s-env
 	@kubectl apply -f k8s/ephemeral_machine.yaml --namespace=$(NAMESPACE)
-	@kubectl apply -f resources/ --namespace=$(NAMESPACE)
+	@kubectl apply -f resources --namespace=$(NAMESPACE)
 	@kubectl apply -f k8s/eidolon-ext-service.yaml --namespace=$(NAMESPACE)
 	@echo "Waiting for eidolon-deployment to be ready..."
 	@kubectl rollout status deployment/eidolon-deployment --namespace=$(NAMESPACE) --timeout=60s
@@ -141,6 +142,7 @@ k8s-webui:
 	@kubectl apply -f k8s/webui.yaml --namespace=$(NAMESPACE)
 	@echo "Waiting for eidolon-webui to be ready..."
 	@kubectl rollout status deployment/eidolon-webui-deployment --namespace=$(NAMESPACE) --timeout=60s
+	./k8s/ingress/subdomain-ingress.sh $(NAMESPACE)
 	@echo "WebUI Deployment is ready."
 
 k8s-env: .env create-namespace
