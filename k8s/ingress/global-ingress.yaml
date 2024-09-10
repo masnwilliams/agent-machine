@@ -1,0 +1,53 @@
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: webui-ingress
+#   namespace: ingress-nginx # The namespace where the NGINX Ingress controller is running
+#   annotations:
+#     kubernetes.io/ingress.global-static-ip-name: 'webui-ingress-ip'
+#     nginx.ingress.kubernetes.io/server-snippet: |
+#       map $host $namespace {
+#         default default;
+#         ~^(?<ns>[a-z0-9-]+)\.getfathom\.ai$ $ns;
+#       }
+#     nginx.ingress.kubernetes.io/configuration-snippet: |
+#       proxy_pass http://$namespace.svc.cluster.local:3000;  # Route to the service in the dynamically extracted namespace
+# spec:
+#   rules:
+#     - host: '*.getfathom.ai'
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: eidolon-webui-service # Same service name in all namespaces
+#                 port:
+#                   number: 3000
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webui-ingress
+  namespace: ingress-nginx # The namespace where the NGINX Ingress controller is running
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: 'webui-ingress-ip'
+    nginx.ingress.kubernetes.io/server-snippet: |
+      map $host $namespace {
+        default default;
+        ~^(?<ns>[a-z0-9-]+)\.getfathom\.ai$ $ns;
+      }
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_pass http://eidolon-webui-service.$namespace.svc.cluster.local:3000;  # Route to eidolon-webui-service in the correct namespace
+spec:
+  rules:
+    - host: '*.getfathom.ai'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: placeholder-service # Dummy backend, will not be used
+                port:
+                  number: 80 # This won't actually handle traffic; proxy_pass will do the work

@@ -5,6 +5,7 @@ REQUIRED_ENVS := OPENAI_API_KEY
 .PHONY: serve serve-dev check docker-serve _docker-serve .env sync update docker-build pull-webui k8s-operator check-kubectl check-helm check-cluster-running verify-k8s-permissions check-install-operator k8s-serve k8s-env test
 
 ARGS ?=
+NAMESPACE ?= default
 
 serve-dev: .make/poetry_install .env
 	@echo "Starting Server..."
@@ -104,6 +105,9 @@ check-cluster-running:
 verify-k8s-permissions:
 	@./k8s/verify_k8s -q || (echo "K8s permission verification failed. Please check your permissions and try again." && exit 1)
 
+create-namespace:
+	@kubectl get namespace $(NAMESPACE) > /dev/null 2>&1 || kubectl create namespace $(NAMESPACE)
+
 # Check if Eidolon operator is installed, install if not
 check-install-operator:
 	@if ! helm list | grep -q "eidolon"; then \
@@ -113,36 +117,39 @@ check-install-operator:
 	else \
 		echo "Eidolon operator is already installed."; \
 	fi
-
-k8s-serve: k8s-server k8s-webui
+	
+k8s-serve: k8s-server k8s-webui 
 	@echo "Press Ctrl+C to exit"
 	@echo "------------------------------------------------------------------"
-	@echo "Server is running at $$(./k8s/get_service_url.sh eidolon-ext-service)"
-	@echo "WebUI is running at $$(./k8s/get_service_url.sh eidolon-webui-service)"
+	@echo "Server is running at $$(./k8s/get_service_url.sh eidolon-ext-service --namespace=$(NAMESPACE))"
+	@echo "WebUI is running at $$(./k8s/get_service_url.sh eidolon-webui-service --namespace=$(NAMESPACE))"
 	@echo "------------------------------------------------------------------"
 	kubectl logs -f \
 		-l 'app in (eidolon, eidolon-webui)' \
+		--namespace=$(NAMESPACE) \
 		--all-containers=true \
 		--prefix=true
 
-k8s-server: check-cluster-running docker-build k8s-env
-	@kubectl apply -f k8s/ephemeral_machine.yaml
-	- @kubectl apply -f resources/
-	@kubectl apply -f k8s/eidolon-ext-service.yaml
+# Remove docker-build for prod
+k8s-server: check-cluster-running k8s-env
+	@kubectl apply -f k8s/ephemeral_machine.yaml --namespace=$(NAMESPACE)
+	- @kubectl apply -f resources/ --namespace=$(NAMESPACE)
+	@kubectl apply -f k8s/eidolon-ext-service.yaml --namespace=$(NAMESPACE)
 	@echo "Waiting for eidolon-deployment to be ready..."
-	@kubectl rollout status deployment/eidolon-deployment --timeout=60s
+	@kubectl rollout status deployment/eidolon-deployment --namespace=$(NAMESPACE) --timeout=60s
 	@echo "Server Deployment is ready."
 
 k8s-webui:
-	@kubectl create configmap webui-apps-config --from-file=./webui.apps.json -o yaml --dry-run=client | kubectl apply -f -
-	@kubectl apply -f k8s/webui.yaml
+	@kubectl create configmap webui-apps-config --from-file=./webui.apps.json -o yaml --dry-run=client | kubectl apply -f - --namespace=$(NAMESPACE)
+	@kubectl apply -f k8s/webui.yaml --namespace=$(NAMESPACE)
 	@echo "Waiting for eidolon-webui to be ready..."
-	@kubectl rollout status deployment/eidolon-webui-deployment --timeout=60s
+	@kubectl rollout status deployment/eidolon-webui-deployment --namespace=$(NAMESPACE) --timeout=60s
+	./k8s/ingress/subdomain-ingress.sh $(NAMESPACE)
 	@echo "WebUI Deployment is ready."
 
-k8s-env: .env
+k8s-env: .env create-namespace
 	@if [ ! -f .env ]; then echo ".env file not found!"; exit 1; fi
-	@kubectl create secret generic eidolon --from-env-file=./.env --dry-run=client -o yaml | kubectl apply -f -
+	@kubectl create secret generic eidolon --from-env-file=./.env --namespace=$(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
 
 docker-build: poetry.lock Dockerfile
 	@docker build -t $(DOCKER_REPO_NAME):latest .

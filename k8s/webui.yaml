@@ -14,26 +14,33 @@ spec:
         app: eidolon-webui
     spec:
       volumes:
-      - name: config-volume
-        configMap:
-          name: webui-apps-config
-      containers:
-      - name: eidolon-webui
-        image: docker.io/eidolonai/webui:latest
-        volumeMounts:
         - name: config-volume
-          mountPath: /app/apps/eidolon-ui2/eidolon-apps-override.json
-          subPath: webui.apps.json
-        imagePullPolicy: Always
-        env:
-          - name: EIDOLON_AUTH_PROVIDERS
-            value: ""
-          - name: NEXTAUTH_SECRET
-            value: "mysecret"
-          - name: EIDOLON_SERVER
-            value: "http://eidolon-service:8080"
-          - name: EIDOLON_APP_REGISTRY_LOC
-            value: "/app/apps/eidolon-ui2/eidolon-apps-override.json"
+          configMap:
+            name: webui-apps-config
+      containers:
+        - name: eidolon-webui
+          image: docker.io/eidolonai/webui:latest
+          volumeMounts:
+            - name: config-volume
+              mountPath: /app/apps/eidolon-ui2/eidolon-apps-override.json
+              subPath: webui.apps.json
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: '100m' # Reduce this value
+              memory: '128Mi' # Reduce this value
+            limits:
+              cpu: '500m' # Adjust this as needed
+              memory: '512Mi' # Adjust this as needed
+          env:
+            - name: EIDOLON_AUTH_PROVIDERS
+              value: ''
+            - name: NEXTAUTH_SECRET
+              value: 'mysecret'
+            - name: EIDOLON_SERVER
+              value: 'http://eidolon-service:8080'
+            - name: EIDOLON_APP_REGISTRY_LOC
+              value: '/app/apps/eidolon-ui2/eidolon-apps-override.json'
 ---
 apiVersion: v1
 kind: Service
@@ -42,8 +49,15 @@ metadata:
   labels:
     app: eidolon-webui
 spec:
-  type: NodePort
-  ports:
-  - port: 3000          # Port exposed within the cluster
+  #   type: NodePort
+  #   ports:
+  #   - port: 3000          # Port exposed within the cluster
+  #   selector:
+  #     app: eidolon-webui
   selector:
     app: eidolon-webui
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

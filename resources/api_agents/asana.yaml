@@ -1,0 +1,46 @@
+apiVersion: server.eidolonai.com/v1alpha1
+kind: Agent
+metadata:
+  name: asana_api_agent
+
+spec:
+  description: An agent that usxes the Pieces API to get information
+  apu:
+    logic_units:
+      - implementation: components.api_logic_unit.ApiLogicUnit
+        title: 'Asana API'
+        root_call_url: https://app.asana.com/api/1.0
+        open_api_location: https://raw.githubusercontent.com/Asana/openapi/master/defs/asana_oas.yaml
+        key_env_var: 'ASANA_API_KEY'
+        put_key_as_bearer_token: true
+        operations_to_expose:
+          - name: 'asana_get_project_tasks'
+            description: Get multiple tasks. Returns the compact task records for some filtered set of tasks. Use one or more of the parameters provided to filter the tasks returned. You must specify a `project_gid` or `tag` if you do not specify `assignee` and `workspace`.
+            path: '/projects/{project_gid}/tasks'
+            method: 'get'
+            extra_query_params:
+              - project_gid:
+                  type: 'string'
+                  value: 1208058171652041
+                  required: true
+                  description: 'The project gid to get tasks from'
+          - name: 'asana_get_task_details'
+            description: Get a task. Returns the complete task record for a single task.
+            path: '/tasks/{task_gid}'
+            method: 'get'
+            extra_query_params:
+              - task_gid:
+                  type: 'string'
+                  value: 1208059247439513
+                  required: true
+                  description: 'The task gid to get'
+          - name: 'asana_get_task_comments'
+            description: Get task comments. Returns the compact records for all comments on the task.
+            path: '/tasks/{task_gid}/stories'
+            method: 'get'
+            extra_query_params:
+              - task_gid:
+                  type: 'string'
+                  value: 1208059247439513
+                  required: true
+                  description: 'The task gid to get comments from'

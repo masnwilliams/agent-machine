@@ -1,0 +1,22 @@
+apiVersion: server.eidolonai.com/v1alpha1
+kind: Agent
+metadata:
+  name: pieces_api_agent
+
+spec:
+  description: An agent that uses the Pieces API to get information
+  apu:
+    logic_units:
+      - implementation: components.api_logic_unit.ApiLogicUnit
+        title: 'Pieces API'
+        root_call_url: http://localhost:1000
+        open_api_location: https://raw.githubusercontent.com/pieces-app/pieces-os-client-openapi-spec/main/spec/modules/core/isomorphic.openapi.yaml
+        operations_to_expose:
+          - name: 'assets'
+            description: 'Get all of the users Assets.'
+            path: '/assets'
+            method: 'get'
+          - name: 'conversations'
+            description: 'Get all of the users Conversations.'
+            path: '/conversations'
+            method: 'get'
