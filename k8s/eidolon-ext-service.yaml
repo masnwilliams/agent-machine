@@ -7,6 +7,9 @@ metadata:
   labels:
     app: eidolon
 spec:
+#   type: NodePort
+#     ports:
+#     - port: 8080 # Port exposed within the cluster
   selector:
     app: eidolon
   type: LoadBalancer
@@ -14,8 +17,3 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
-#   type: NodePort
-#   ports:
-#     - port: 8080 # Port exposed within the cluster
-#   selector:
-#     app: eidolon
