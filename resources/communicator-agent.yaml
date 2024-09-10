@@ -5,12 +5,12 @@ metadata:
 
 spec:
   agent_name: communicator-agent
-  # agent_refs: [
-  #     research_copilot,
-  #     repo_expert,
-  #     # pieces_api_agent,
-  #     # asana_api_agent,
-  #   ]
+  agent_refs: [
+      research_copilot,
+      repo_expert,
+      # pieces_api_agent,
+      # asana_api_agent,
+    ]
   description: >
     An agent that coordinates various activities and ensures cohesive execution across different functions for Mason Williams at Fathom.
     This agent interacts directly with the user, Mason Williams, providing a seamless interface to manage and coordinate tasks across all connected services: gmail,asana.
